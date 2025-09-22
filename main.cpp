@@ -1,52 +1,72 @@
-
 #include <fstream>
 #include <cstring>
 #include <iostream>
 
-int main(int argc, char** argv) {
-    
-    if (strcmp(argv[1], "--word") != 0 || strcmp(argv[3], "--file") != 0) {
-        std::cout << "Incorrect type of arguments: use --word <word> --file <file path>" << std::endl;
-        return -1;
+
+char* arg_word;
+char* arg_filepath;
+
+bool ParsingArgs(char** argv) {
+    if ((strcmp(argv[1], "--word") != 0) == (strcmp(argv[3], "--word") != 0) || 
+        (strcmp(argv[1], "--file") != 0) == (strcmp(argv[3], "--file") != 0)) { //проверка корректности аргументов
+        std::cout << "Incorrect type of arguments: use [--word <word>] [--file <file path>]" << std::endl;
+        return false;
     }
-    if (strlen(argv[2]) > 32) {
+
+    if (strcmp(argv[1], "--word") == 0) {
+        arg_word = argv[2];
+        arg_filepath = argv[4];
+    } else {
+        arg_filepath = argv[2];
+        arg_word = argv[4];
+    }
+
+    if (strlen(arg_word) > 32) { //проврека корректности длины слова
+
         std::cout << "Words no longer than 32 characters are accepted" << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+
+int СountOfWords(std::fstream &file, char* arg_word) {
+    int cnt = 0;
+    char word[100];
+    while (file >> word) {
+        bool flag = false;
+        for (int i = 0; i < strlen(arg_word); i++) {
+            flag = false;
+            for (int j = 0; j < strlen(word); j++) {
+                if (arg_word[i] == word[j]) {
+                    flag = true;
+                    break;
+                }
+            }
+            if (!flag) {
+                break;
+            } 
+        }
+
+        if (flag) {
+            cnt++;
+        }
+    }
+    return cnt;
+}
+
+int main(int argc, char** argv) {
+    if (!ParsingArgs(argv)) {
         return -1;
     }
 
-    char* arg_word = argv[2];
-    char* filepath = argv[4];
-    std::fstream fs(filepath, std::ios::in);
-    
+    std::fstream fs(arg_filepath, std::ios::in);
     if (!fs.is_open()) {
         std::cout << "Could not open file" << std::endl;
         return -1;
     }
 
-    char word[100];
-    int cnt = 0;
-    while (fs >> word) {
-        int flag = 0;
-        for (int i = 0; i < strlen(arg_word); i++) {
-            flag = 0;
-            for (int j = 0; j < strlen(word); j++) {
-                if (arg_word[i] == word[j]) {
-                    flag = 1;
-                    break;
-                }
-            }
-
-            if (flag == 0) {
-                break;
-            } 
-        }
-
-        if (flag == 1) {
-            cnt++;
-        }
-    }
-    
-    std::cout << "Count of words: " << cnt << std::endl;
+    std::cout << "Count of words: " << СountOfWords(fs, arg_word) << std::endl;
     fs.close();
     return 0;
 }
